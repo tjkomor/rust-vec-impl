@@ -69,6 +69,12 @@ impl <T> MyVec<T> {
             self.capacity = new_capacity;
         }
     }
+
+    impl <T>Drop for MyVec<T> {
+        fn drop(&mut self) {
+            
+        }
+    }
 }
 
 
