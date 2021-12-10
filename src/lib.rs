@@ -1,5 +1,5 @@
 use std::ptr::NonNull;
-use std::alloc;
+use std::alloc::{self};
 pub struct MyVec<T> {
     pointer: NonNull<T>,
     len: usize,
@@ -51,8 +51,22 @@ impl <T> MyVec<T> {
                 self.len += 1;
             }
         } else {
-            todo!()
-            
+            debug_assert!(self.len == self.capacity); // len should always eq capacity if this block is reached
+            let new_capacity = self.capacity.checked_mul(2).expect("capacity wrapped");
+            let align = std::mem::align_of::<T>();
+            let size = std::mem::size_of::<T>() * self.capacity;
+            size.checked_mul(size % align).expect("Can't allocate");
+            let ptr = unsafe {
+                let layout = alloc::Layout::from_size_align_unchecked(size, align);
+                let new_size: usize = std::mem::size_of::<T>() * new_capacity;
+                let ptr = alloc::realloc(self.pointer.as_ptr() as *mut u8, layout, new_size);
+                let ptr = NonNull::new(ptr as *mut T).expect("could not reallocate");
+                ptr.as_ptr().add(self.len).write(item);
+                ptr
+            };
+            self.pointer = ptr;
+            self.len += 1;
+            self.capacity = new_capacity;
         }
     }
 }
@@ -65,14 +79,13 @@ mod tests {
     
     fn it_works() {
         let mut vec: MyVec<usize> = MyVec::<usize>::new();
-        vec.push()
-        // vec.push(1usize); //first element will imply type for all element in vec
-        // vec.push(2);
-        // vec.push(3);
-        // vec.push(4);
-        // vec.push(5);
+        vec.push(1usize); //first element will imply type for all element in vec
+        vec.push(2);
+        vec.push(3);
+        vec.push(4);
+        vec.push(5);
 
-        assert_eq!(vec.capacity(), 0);
-        assert_eq!(vec.len(), 0);
+        assert_eq!(vec.capacity(), 8);
+        assert_eq!(vec.len(), 5);
     }
 }
