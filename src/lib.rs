@@ -70,6 +70,13 @@ impl <T> MyVec<T> {
         }
     }
 
+    pub fn get(&self, index: usize) -> Option<&T> {
+        if index >= self.len {
+            return None;
+        }
+        Some(unsafe { &*self.pointer.as_ptr().add(index) })
+    }
+
 }
 
 impl<T> Drop for MyVec<T> {
@@ -100,6 +107,10 @@ mod tests {
         vec.push(3);
         vec.push(4);
         vec.push(5);
+
+        for n in 0..vec.len() {
+            assert_eq!(vec.get(n), Some(&(n + 1)));
+        }
 
         assert_eq!(vec.capacity(), 8);
         assert_eq!(vec.len(), 5);
