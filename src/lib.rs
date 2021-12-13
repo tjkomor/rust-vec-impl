@@ -70,10 +70,20 @@ impl <T> MyVec<T> {
         }
     }
 
-    impl <T>Drop for MyVec<T> {
-        fn drop(&mut self) {
-            todo!("implement this")
-        }
+}
+
+impl<T> Drop for MyVec<T> {
+    fn drop(&mut self) {
+        unsafe { 
+            std::ptr::drop_in_place(std::slice::from_raw_parts_mut(self.pointer.as_ptr(), self.len));
+        
+            let layout = alloc::Layout::from_size_align_unchecked(
+                std::mem::size_of::<T>() * self.capacity, 
+                std::mem::align_of::<T>(),
+            );
+            
+            alloc::dealloc(self.pointer.as_ptr() as *mut u8, layout)
+        };
     }
 }
 
